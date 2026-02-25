@@ -14,141 +14,16 @@ export type Database = {
   }
   public: {
     Tables: {
-      payments: {
-        Row: {
-          amount_cents: number
-          created_at: string
-          credits_purchased: number
-          id: string
-          mp_payment_id: string | null
-          mp_preference_id: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount_cents: number
-          created_at?: string
-          credits_purchased: number
-          id?: string
-          mp_payment_id?: string | null
-          mp_preference_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount_cents?: number
-          created_at?: string
-          credits_purchased?: number
-          id?: string
-          mp_payment_id?: string | null
-          mp_preference_id?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          cpf: string | null
-          created_at: string
-          credits: number
-          display_name: string | null
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          cpf?: string | null
-          created_at?: string
-          credits?: number
-          display_name?: string | null
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          cpf?: string | null
-          created_at?: string
-          credits?: number
-          display_name?: string | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      remix_history: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          id: string
-          logs: string[] | null
-          source_repo: string
-          status: string
-          target_repo: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          logs?: string[] | null
-          source_repo: string
-          status?: string
-          target_repo: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          logs?: string[] | null
-          source_repo?: string
-          status?: string
-          target_repo?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -275,8 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "moderator", "user"],
-    },
+    Enums: {},
   },
 } as const
