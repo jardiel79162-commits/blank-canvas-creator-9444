@@ -1,25 +1,21 @@
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
-import { Navigate } from "react-router-dom";
-import Dashboard from "./Dashboard";
-import Admin from "./Admin";
-import { Loader2 } from "lucide-react";
+import Header from "@/components/Header";
+import HeroSection from "@/components/HeroSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import CTASection from "@/components/CTASection";
+import Footer from "@/components/Footer";
 
-export default function Index() {
-  const { user, loading } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+const Index = () => {
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <CTASection />
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
-  if (loading || roleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) return <Navigate to="/auth" replace />;
-
-  if (isAdmin) return <Admin />;
-
-  return <Dashboard />;
-}
+export default Index;
