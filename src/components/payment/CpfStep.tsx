@@ -64,8 +64,17 @@ export default function CpfStep({ savedCpf, quantity, total, loading, onSubmit, 
 
       {/* CPF Input */}
       <div className="space-y-3">
+        {hasSaved && (
+          <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 flex items-center gap-3">
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-primary font-medium">CPF salvo</p>
+              <p className="text-sm font-mono text-foreground tracking-wider">{formatSavedCpf(savedCpf)}</p>
+            </div>
+          </div>
+        )}
         <Label htmlFor="cpf" className="text-sm text-muted-foreground">
-          {hasSaved ? "CPF salvo" : "Informe seu CPF"}
+          {hasSaved ? "Confirme ou edite seu CPF" : "Informe seu CPF"}
         </Label>
         <Input
           id="cpf"
@@ -97,7 +106,7 @@ export default function CpfStep({ savedCpf, quantity, total, loading, onSubmit, 
 
       {hasSaved && (
         <p className="text-xs text-muted-foreground text-center">
-          Para alterar seu CPF, acesse as configurações do perfil.
+          Para alterar permanentemente, acesse as configurações do perfil.
         </p>
       )}
 
