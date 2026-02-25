@@ -18,8 +18,8 @@ const STEP_LABELS: Record<Step, string> = {
   success: "Confirmado",
 };
 
-function StepIndicator({ current }: { current: Step }) {
-  const steps: Step[] = ["cpf", "qrcode", "success"];
+function StepIndicator({ current, skipCpf }: { current: Step; skipCpf: boolean }) {
+  const steps: Step[] = skipCpf ? ["qrcode", "success"] : ["cpf", "qrcode", "success"];
   const currentIdx = steps.indexOf(current);
 
   return (
@@ -66,10 +66,12 @@ export default function Payment() {
   const [step, setStep] = useState<Step>("cpf");
   const [loading, setLoading] = useState(false);
   const [savedCpf, setSavedCpf] = useState("");
+  const [cpfLoaded, setCpfLoaded] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const [qrCodeBase64, setQrCodeBase64] = useState("");
   const [paymentId, setPaymentId] = useState("");
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSubmittedRef = useRef(false);
 
   const unitPrice = 0.5;
   const total = (quantity * unitPrice).toFixed(2);
@@ -83,8 +85,18 @@ export default function Payment() {
       .single()
       .then(({ data }) => {
         if ((data as any)?.cpf) setSavedCpf((data as any).cpf);
+        setCpfLoaded(true);
       });
   }, [user]);
+
+  // Auto-submit when CPF is saved — skip CpfStep entirely
+  useEffect(() => {
+    if (cpfLoaded && savedCpf && step === "cpf" && !autoSubmittedRef.current) {
+      autoSubmittedRef.current = true;
+      const cleanCpf = savedCpf.replace(/\D/g, "");
+      handleCpfSubmit(cleanCpf, false);
+    }
+  }, [cpfLoaded, savedCpf, step]);
 
   const startPolling = useCallback((pId: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -190,13 +202,13 @@ export default function Payment() {
 
         {/* Step indicator */}
         <div className="max-w-lg mx-auto w-full px-4">
-          <StepIndicator current={step} />
+          <StepIndicator current={step} skipCpf={!!savedCpf} />
         </div>
 
         {/* Main content */}
         <main className="flex-1 flex items-start justify-center p-4 pt-2">
           <div className="w-full max-w-md animate-fade-in" key={step}>
-            {step === "cpf" && (
+            {step === "cpf" && !savedCpf && cpfLoaded && (
               <CpfStep
                 savedCpf={savedCpf}
                 quantity={quantity}
@@ -205,6 +217,15 @@ export default function Payment() {
                 onSubmit={handleCpfSubmit}
                 onCancel={() => navigate("/store")}
               />
+            )}
+            {step === "cpf" && (savedCpf || !cpfLoaded) && (
+              <div className="glass-card rounded-2xl p-8 flex flex-col items-center gap-4 animate-fade-in">
+                <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">Gerando QR Code PIX...</p>
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
             )}
             {step === "qrcode" && (
               <QrCodeStep
