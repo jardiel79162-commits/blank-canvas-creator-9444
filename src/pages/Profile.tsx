@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save, Loader2, Receipt, CheckCircle2, Clock, XCircle, CreditCard } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Receipt, CheckCircle2, Clock, XCircle, CreditCard, Ban, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import AppFooter from "@/components/AppFooter";
@@ -18,6 +18,47 @@ interface Payment {
   credits_purchased: number;
   status: string;
   created_at: string;
+}
+
+const EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+
+function getTimeLeft(createdAt: string): number {
+  const elapsed = Date.now() - new Date(createdAt).getTime();
+  return Math.max(0, EXPIRY_MS - elapsed);
+}
+
+function CountdownBar({ createdAt }: { createdAt: string }) {
+  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(createdAt));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(getTimeLeft(createdAt));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt]);
+
+  const minutes = Math.floor(timeLeft / 60000);
+  const seconds = Math.floor((timeLeft % 60000) / 1000);
+  const progress = (timeLeft / EXPIRY_MS) * 100;
+  const isUrgent = timeLeft < 5 * 60 * 1000;
+
+  if (timeLeft <= 0) return null;
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex items-center justify-between">
+        <span className={`text-[10px] font-mono ${isUrgent ? "text-destructive" : "text-muted-foreground"}`}>
+          {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")} restantes
+        </span>
+      </div>
+      <div className="h-1 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ${isUrgent ? "bg-destructive" : "bg-warning"}`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function Profile() {
@@ -35,6 +76,10 @@ export default function Profile() {
   const [recoverSuccess, setRecoverSuccess] = useState(false);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Dialog state for pending payment action
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
   const formatCpf = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     return digits
@@ -44,7 +89,7 @@ export default function Profile() {
   };
 
   const isExpired = (createdAt: string) => {
-    return Date.now() - new Date(createdAt).getTime() > 60 * 60 * 1000;
+    return getTimeLeft(createdAt) <= 0;
   };
 
   const loadPayments = useCallback(() => {
@@ -56,13 +101,50 @@ export default function Profile() {
       .order("created_at", { ascending: false })
       .limit(50)
       .then(({ data }) => {
-        const filtered = (data || []).filter(
-          (p: Payment) => !(p.status === "pending" && isExpired(p.created_at))
-        );
-        setPayments(filtered as Payment[]);
+        setPayments((data || []) as Payment[]);
         setLoadingPayments(false);
       });
   }, [user]);
+
+  // Auto-cancel expired pending payments
+  useEffect(() => {
+    if (!user || payments.length === 0) return;
+
+    const pendingExpired = payments.filter(
+      (p) => p.status === "pending" && isExpired(p.created_at)
+    );
+
+    if (pendingExpired.length > 0) {
+      Promise.all(
+        pendingExpired.map((p) =>
+          supabase.from("payments").update({ status: "cancelled" }).eq("id", p.id)
+        )
+      ).then(() => {
+        // Update local state
+        setPayments((prev) =>
+          prev.map((p) =>
+            pendingExpired.some((ep) => ep.id === p.id)
+              ? { ...p, status: "cancelled" }
+              : p
+          )
+        );
+      });
+    }
+
+    // Set a timer to check again when the nearest pending expires
+    const pendingActive = payments.filter(
+      (p) => p.status === "pending" && !isExpired(p.created_at)
+    );
+    if (pendingActive.length > 0) {
+      const nearestExpiry = Math.min(
+        ...pendingActive.map((p) => getTimeLeft(p.created_at))
+      );
+      const timeout = setTimeout(() => {
+        loadPayments();
+      }, nearestExpiry + 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [payments, user, loadPayments]);
 
   useEffect(() => {
     if (!user) return;
@@ -106,7 +188,19 @@ export default function Profile() {
     }
   };
 
+  const handleCancelPayment = async (paymentId: string) => {
+    setCancellingId(paymentId);
+    await supabase.from("payments").update({ status: "cancelled" }).eq("id", paymentId);
+    setPayments((prev) =>
+      prev.map((p) => (p.id === paymentId ? { ...p, status: "cancelled" } : p))
+    );
+    setSelectedPayment(null);
+    setCancellingId(null);
+    toast({ title: "Pagamento cancelado" });
+  };
+
   const handleRecoverPayment = async (payment: Payment) => {
+    setSelectedPayment(null);
     setRecoverLoading(true);
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -171,6 +265,7 @@ export default function Profile() {
     switch (status) {
       case "approved": return <CheckCircle2 className="w-4 h-4 text-success" />;
       case "pending": return <Clock className="w-4 h-4 text-warning" />;
+      case "cancelled": return <Ban className="w-4 h-4 text-destructive" />;
       default: return <XCircle className="w-4 h-4 text-destructive" />;
     }
   };
@@ -179,6 +274,7 @@ export default function Profile() {
     switch (status) {
       case "approved": return "Aprovado";
       case "pending": return "Pendente";
+      case "cancelled": return "Cancelado";
       case "expired": return "Expirado";
       default: return "Falhou";
     }
@@ -300,7 +396,7 @@ export default function Profile() {
                 return (
                   <div
                     key={p.id}
-                    onClick={() => isPendingValid && handleRecoverPayment(p)}
+                    onClick={() => isPendingValid && setSelectedPayment(p)}
                     className={`p-4 transition-colors ${
                       isPendingValid
                         ? "hover:bg-primary/5 cursor-pointer border-l-2 border-l-warning"
@@ -324,15 +420,20 @@ export default function Profile() {
                           </p>
                           <div className="flex items-center gap-2">
                             {isPendingValid && (
-                              <span className="text-xs text-primary font-medium">Clique para pagar →</span>
+                              <span className="text-xs text-primary font-medium">Toque para opções →</span>
                             )}
                             <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
-                              p.status === "approved" ? "text-success bg-success/10" : p.status === "pending" ? "text-warning bg-warning/10" : "text-destructive bg-destructive/10"
+                              p.status === "approved" ? "text-success bg-success/10" 
+                              : p.status === "pending" ? "text-warning bg-warning/10" 
+                              : p.status === "cancelled" ? "text-destructive bg-destructive/10"
+                              : "text-destructive bg-destructive/10"
                             }`}>
                               {statusLabel(p.status)}
                             </span>
                           </div>
                         </div>
+                        {/* Countdown bar for active pending payments */}
+                        {isPendingValid && <CountdownBar createdAt={p.created_at} />}
                       </div>
                     </div>
                   </div>
@@ -344,6 +445,55 @@ export default function Profile() {
       </main>
       <AppFooter />
       </div>
+
+      {/* Action dialog for pending payment */}
+      {selectedPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedPayment(null)}>
+          <div className="glass-card rounded-2xl p-6 w-full max-w-sm mx-4 space-y-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center mx-auto">
+                <Clock className="w-6 h-6 text-warning" />
+              </div>
+              <h3 className="font-semibold text-foreground text-lg">Pagamento Pendente</h3>
+              <p className="text-sm text-muted-foreground">
+                {selectedPayment.credits_purchased} crédito{selectedPayment.credits_purchased > 1 ? "s" : ""} — R$ {(selectedPayment.amount_cents / 100).toFixed(2)}
+              </p>
+              <CountdownBar createdAt={selectedPayment.created_at} />
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              O que deseja fazer com este pagamento?
+            </p>
+
+            <div className="space-y-2.5">
+              <Button
+                onClick={() => handleRecoverPayment(selectedPayment)}
+                variant="glow"
+                className="w-full rounded-full h-11 text-sm btn-hover-pop"
+                disabled={recoverLoading}
+              >
+                {recoverLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                Pagar agora
+              </Button>
+              <Button
+                onClick={() => handleCancelPayment(selectedPayment.id)}
+                variant="outline"
+                className="w-full rounded-full h-11 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                disabled={cancellingId === selectedPayment.id}
+              >
+                {cancellingId === selectedPayment.id ? <Loader2 className="animate-spin w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                Cancelar pagamento
+              </Button>
+              <button
+                onClick={() => setSelectedPayment(null)}
+                className="w-full text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors text-center py-1"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
