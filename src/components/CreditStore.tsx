@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Coins, ShoppingCart, Plus, Minus } from "lucide-react";
-import PaymentFlow from "@/components/PaymentFlow";
 
 interface CreditStoreProps {
   credits: number;
@@ -13,7 +12,7 @@ interface CreditStoreProps {
 
 export default function CreditStore({ credits, onPurchaseComplete }: CreditStoreProps) {
   const [quantity, setQuantity] = useState(10);
-  const [showPayment, setShowPayment] = useState(false);
+  
   const navigate = useNavigate();
 
   const unitPrice = 0.5;
@@ -23,14 +22,7 @@ export default function CreditStore({ credits, onPurchaseComplete }: CreditStore
     setQuantity((prev) => Math.max(1, Math.min(10000, prev + delta)));
   };
 
-  const handlePaymentComplete = () => {
-    onPurchaseComplete();
-  };
 
-  const handleClose = () => {
-    setShowPayment(false);
-    navigate("/");
-  };
 
   return (
     <>
@@ -97,7 +89,7 @@ export default function CreditStore({ credits, onPurchaseComplete }: CreditStore
         </div>
 
         <Button
-          onClick={() => setShowPayment(true)}
+          onClick={() => navigate(`/payment?qty=${quantity}`)}
           variant="glow"
           size="lg"
           className="w-full rounded-full h-12 text-base"
@@ -106,14 +98,6 @@ export default function CreditStore({ credits, onPurchaseComplete }: CreditStore
           {`Comprar ${quantity} crédito${quantity > 1 ? "s" : ""}`}
         </Button>
       </div>
-
-      {showPayment && (
-        <PaymentFlow
-          quantity={quantity}
-          onClose={handleClose}
-          onPaymentComplete={handlePaymentComplete}
-        />
-      )}
     </>
   );
 }
