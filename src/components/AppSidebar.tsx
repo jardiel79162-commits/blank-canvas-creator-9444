@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ShoppingCart, User, LogOut, GitBranch, X } from "lucide-react";
+import { ShoppingCart, User, LogOut, GitBranch, X, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AppSidebarProps {
@@ -11,6 +11,7 @@ interface AppSidebarProps {
 }
 
 const navItems = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Loja de Créditos", icon: ShoppingCart, path: "/store" },
   { label: "Meu Perfil", icon: User, path: "/profile" },
 ];
