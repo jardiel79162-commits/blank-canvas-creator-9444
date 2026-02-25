@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 20% 7%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 18% 10%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 18% 10%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 187 80% 52%;
+    --primary-foreground: 220 20% 7%;
+
+    --secondary: 220 16% 16%;
+    --secondary-foreground: 210 20% 82%;
+
+    --muted: 220 14% 14%;
+    --muted-foreground: 215 12% 50%;
+
+    --accent: 187 60% 20%;
+    --accent-foreground: 187 80% 72%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 60% 45%;
+    --success-foreground: 220 20% 7%;
+
+    --warning: 38 90% 55%;
+    --warning-foreground: 220 20% 7%;
+
+    --border: 220 14% 18%;
+    --input: 220 14% 18%;
+    --ring: 187 80% 52%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 18% 10%;
+    --sidebar-foreground: 210 20% 82%;
+    --sidebar-primary: 187 80% 52%;
+    --sidebar-primary-foreground: 220 20% 7%;
+    --sidebar-accent: 220 16% 16%;
+    --sidebar-accent-foreground: 210 20% 82%;
+    --sidebar-border: 220 14% 18%;
+    --sidebar-ring: 187 80% 52%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(187 80% 52%), hsl(200 90% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(220 18% 12%), hsl(220 18% 8%));
+    --glow-primary: 0 0 20px hsl(187 80% 52% / 0.3);
+  }
+
+  .dark {
+    --background: 220 20% 7%;
+    --foreground: 210 20% 92%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  code, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .glow-primary {
+    box-shadow: var(--glow-primary);
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass-card {
+    background: hsl(220 20% 12% / 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(187 80% 52% / 0.15);
+    box-shadow: 0 8px 32px hsl(220 20% 7% / 0.4), inset 0 1px 0 hsl(210 20% 92% / 0.05);
+  }
+
+  .glass-input {
+    background: hsl(220 20% 12% / 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid hsl(187 80% 52% / 0.2);
+  }
+
+  .glass-input:focus-within {
+    border-color: hsl(187 80% 52% / 0.5);
+    box-shadow: 0 0 12px hsl(187 80% 52% / 0.15);
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px hsl(187 80% 52% / 0.2); }
+    50% { box-shadow: 0 0 25px hsl(187 80% 52% / 0.4); }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+  }
+
+  /* Micro-interactions (25) */
+  .btn-hover-pop {
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+  }
+  .btn-hover-pop:hover:not(:disabled) {
+    transform: scale(1.03);
+  }
+  .btn-hover-pop:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+#lovable-badge { display: none !important; }

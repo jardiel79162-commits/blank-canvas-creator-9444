@@ -1,0 +1,1 @@
+ALTER TABLE public.remix_history ADD COLUMN logs text[] DEFAULT '{}';

@@ -1,0 +1,10 @@
+project_id = "hhchvykarrebllxjmvcm"
+
+[functions.github-remix]
+verify_jwt = false
+
+[functions.mercadopago-payment]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
